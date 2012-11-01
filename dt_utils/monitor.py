@@ -21,7 +21,9 @@ hostname = hostname[:hostname.find('.')]
 
 def monitor(root_path, host, port=6379, db=0):
     services = os.listdir(root_path)
-    r = redis.StrictRedis(host=hostname, port=port, db=db)
+    r = redis.StrictRedis(host=host, port=port, db=db)
+    host_storage_name = 'dt-monitor:host:' + hostname
+    r.sadd('dt-monitor:hosts', host_storage_name)
 
     flapping = {}
     while True:
@@ -41,7 +43,9 @@ def monitor(root_path, host, port=6379, db=0):
                     del flapping[service]
 
             states[service] = "{0}:{1}".format(up_string, status.tai)
-        r.hmset(hostname, states)
+        r.hmset(host_storage_name, states)
+        if not r.sismember('dt-monitor:hosts', host_storage_name):
+            r.sadd('dt-monitor:hosts', host_storage_name)
         sleep(10)
 
 
