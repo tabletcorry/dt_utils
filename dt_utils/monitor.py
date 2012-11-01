@@ -26,9 +26,10 @@ def monitor(root_path, host, port=6379, db=0):
     r.sadd('dt-monitor:hosts', host_storage_name)
 
     flapping = {}
+    states = {}
     while True:
+        new_states = {}
         now = int(time())
-        states = {}
         for service in services:
             status = read_status(os.path.join(root_path, service))
             up_string = 'up'
@@ -42,11 +43,28 @@ def monitor(root_path, host, port=6379, db=0):
                 if service in flapping:
                     del flapping[service]
 
-            states[service] = "{0}:{1}".format(up_string, status.tai)
-        r.hmset(host_storage_name, states)
+            state_string = "{0}:{1}".format(up_string, status.tai)
+            if service in states:
+                if states[service] == state_string:
+                    continue
+            new_states[service] = state_string
+        if len(new_states) > 0:
+            r.hmset(host_storage_name, new_states)
+            for service, state_string in new_states.items():
+                states[service] = state_string
+                if state_string.startswith('up:'):
+                    r.srem('dt-monitor:services:down', host_storage_name + ':' + service)
+                    r.srem('dt-monitor:services:flap', host_storage_name + ':' + service)
+                elif state_string.startswith('down:'):
+                    r.sadd('dt-monitor:services:down', host_storage_name + ':' + service)
+                    r.srem('dt-monitor:services:flap', host_storage_name + ':' + service)
+                elif state_string.startswith('flap:'):
+                    r.sadd('dt-monitor:services:flap', host_storage_name + ':' + service)
+                    r.srem('dt-monitor:services:down', host_storage_name + ':' + service)
+        sleep(10)
         if not r.sismember('dt-monitor:hosts', host_storage_name):
             r.sadd('dt-monitor:hosts', host_storage_name)
-        sleep(10)
+            states = {}
 
 
 if __name__ == "__main__":
