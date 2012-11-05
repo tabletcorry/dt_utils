@@ -40,7 +40,8 @@ def monitor(root_path, host, port=6379, db=0):
             if now - status.tai <= INTERVAL:
                 if service in flapping:
                     up_string = 'flap'
-                flapping[service] = status.tai
+                else:
+                    flapping[service] = status.tai
             else:
                 if service in flapping:
                     del flapping[service]
