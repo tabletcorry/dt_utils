@@ -40,12 +40,12 @@ def monitor(root_path, host, port=6379, db=0):
             if now - status.tai <= INTERVAL:
                 if service in flapping:
                     up_string = 'flap'
-                flapping[service] = True
+                flapping[service] = status.tai
             else:
                 if service in flapping:
                     del flapping[service]
 
-            state_string = "{0}:{1}".format(up_string, status.tai)
+            state_string = "{0}:{1}".format(up_string, status.tai if up_string != 'flap' else flapping[service])
             if service in states:
                 if states[service] == state_string:
                     continue
