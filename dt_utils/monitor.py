@@ -10,6 +10,8 @@ import redis
 hostname = socket.gethostname()
 hostname = hostname[:hostname.find('.')]
 
+INTERVAL = 10
+
 
 # Redis is <host> -> <service> -> <state>
 #   Where state is:
@@ -35,7 +37,7 @@ def monitor(root_path, host, port=6379, db=0):
             up_string = 'up'
             if not status.up:
                 up_string = 'down'
-            if now - status.tai < 10:
+            if now - status.tai <= INTERVAL:
                 if service in flapping:
                     up_string = 'flap'
                 flapping[service] = True
@@ -61,7 +63,7 @@ def monitor(root_path, host, port=6379, db=0):
                 elif state_string.startswith('flap:'):
                     r.sadd('dt-monitor:services:flap', host_storage_name + ':' + service)
                     r.srem('dt-monitor:services:down', host_storage_name + ':' + service)
-        sleep(10)
+        sleep(INTERVAL)
         if not r.sismember('dt-monitor:hosts', host_storage_name):
             r.sadd('dt-monitor:hosts', host_storage_name)
             states = {}
