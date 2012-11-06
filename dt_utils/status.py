@@ -22,6 +22,9 @@ State = namedtuple("State", [
 TAI_MAIN = 2 ** 62
 TAI_EXTENSION_1 = 2 ** 63
 
+# TAI = UTC + 10
+LEAP_ADJUST = 10
+
 
 def read_status(service):
     down_file = False
@@ -43,6 +46,8 @@ def read_status(service):
     else:
         raise ValueError(
             "TAI64 label outside expected ranges: {0}".format(tai))
+
+    tai = tai - LEAP_ADJUST
 
     assert tai_n < 999999999, "TAI64N label outside valid range: {0}".format(
         tai_n)

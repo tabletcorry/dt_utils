@@ -37,7 +37,9 @@ def monitor(root_path, host, port=6379, db=0):
             up_string = 'up'
             if not status.up:
                 up_string = 'down'
-            if now - status.tai < INTERVAL:
+            if now - status.tai <= INTERVAL:
+                print status
+                print flapping
                 if service in flapping:
                     up_string = 'flap'
                 else:
