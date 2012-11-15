@@ -76,7 +76,7 @@ def monitor(root_path, host, port=6379, db=0):
 
         if heartbeat_accum % 60 > 0:
             heartbeat_accum = 0
-            r.hmset('dt-monitor:heartbeat', host_storage_name, now)
+            r.hset('dt-monitor:heartbeat', host_storage_name, now)
 
 if __name__ == "__main__":
     import sys
