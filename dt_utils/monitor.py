@@ -27,6 +27,7 @@ def monitor(root_path, host, port=6379, db=0):
     host_storage_name = 'dt-monitor:host:' + hostname
     r.sadd('dt-monitor:hosts', host_storage_name)
 
+    heartbeat_accum = 0
     flapping = {}
     states = {}
     while True:
@@ -71,6 +72,11 @@ def monitor(root_path, host, port=6379, db=0):
             r.sadd('dt-monitor:hosts', host_storage_name)
             states = {}
 
+        heartbeat_accum += INTERVAL
+
+        if heartbeat_accum % 60 > 0:
+            heartbeat_accum = 0
+            r.hmset('dt-monitor:heartbeat', host_storage_name, now)
 
 if __name__ == "__main__":
     import sys
