@@ -40,8 +40,9 @@ def prepare_for_graphite(status, service, now):
 
     stats_buffer.append((metric_path.format(hostname, service, "uptime"),
                         (now, run_time)))
-    stats_buffer.append((metric_path.format(hostname, service, "restart"),
-                        (now, 1 if restarted else 0)))
+    if restarted:
+        stats_buffer.append((metric_path.format(hostname, service, "restart"),
+                            (now, 1)))
 
 def send_to_graphite():
     global stats_buffer
