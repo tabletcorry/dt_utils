@@ -7,11 +7,16 @@ import socket
 from dt_utils.status import read_status
 import redis
 
+import cPickle as pickle
+import struct
+
 hostname = socket.gethostname()
 hostname = hostname[:hostname.find('.')]
 
 INTERVAL = 10
 
+GRAPHITE_HOST = 'graphite.rfiserve.net'
+GRAPHITE_PORT = 2004
 
 # Redis is <host> -> <service> -> <state>
 #   Where state is:
@@ -20,6 +25,32 @@ INTERVAL = 10
 #     up, down, flap
 #   Where time is:
 #     integer representing time in status
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((GRAPHITE_HOST, GRAPHITE_PORT))
+
+stats_buffer = []
+metric_path = "hosts.{0}.DT.{1}.{2}"
+
+def prepare_for_graphite(status, service, now):
+    run_time = now - status.tai
+    restarted = run_time <= INTERVAL
+
+    service = service.replace('.', '_')
+
+    stats_buffer.append((metric_path.format(hostname, service, "uptime"),
+                        (now, run_time)))
+    stats_buffer.append((metric_path.format(hostname, service, "restart"),
+                        (now, 1 if restarted else 0)))
+
+def send_to_graphite():
+    global stats_buffer
+    payload = pickle.dumps(stats_buffer)
+    header = struct.pack("!L", len(payload))
+    message = header + payload
+    s.send(message)
+    stats_buffer = []
+
 
 def monitor(root_path, host, port=6379, db=0):
     services = os.listdir(root_path)
@@ -49,6 +80,8 @@ def monitor(root_path, host, port=6379, db=0):
                 if service in flapping:
                     del flapping[service]
 
+            prepare_for_graphite(status, service, now)
+
             state_string = "{0}:{1}".format(up_string, status.tai if up_string != 'flap' else flapping[service])
             if service in states:
                 if states[service] == state_string:
@@ -77,6 +110,8 @@ def monitor(root_path, host, port=6379, db=0):
         if heartbeat_accum % 60 > 0:
             heartbeat_accum = 0
             r.hset('dt-monitor:heartbeat', host_storage_name, now)
+
+        send_to_graphite()
 
 if __name__ == "__main__":
     import sys
