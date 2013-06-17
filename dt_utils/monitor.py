@@ -44,12 +44,19 @@ def prepare_for_graphite(status, service, now):
         stats_buffer.append((metric_path.format(hostname, service, "restart"),
                             (now, 1)))
 
+interval_total = 0
+
 def send_to_graphite():
-    global stats_buffer
-    payload = pickle.dumps(stats_buffer)
-    header = struct.pack("!L", len(payload))
-    message = header + payload
-    s.send(message)
+    global stats_buffer, interval_total
+    if interval_total >= 6:
+        interval_total = 0
+
+        payload = pickle.dumps(stats_buffer)
+        header = struct.pack("!L", len(payload))
+        message = header + payload
+        s.send(message)
+
+    interval_total += 1
     stats_buffer = []
 
 
