@@ -15,7 +15,7 @@ hostname = hostname[:hostname.find('.')]
 
 INTERVAL = 10
 
-GRAPHITE_HOST = 'graphite.rfiserve.net'
+GRAPHITE_HOST = 'graphite'
 GRAPHITE_PORT = 2004
 
 # Redis is <host> -> <service> -> <state>
