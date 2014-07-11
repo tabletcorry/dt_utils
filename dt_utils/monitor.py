@@ -124,4 +124,5 @@ def monitor(root_path, host, port=6379, db=0):
 
 if __name__ == "__main__":
     import sys
+    GRAPHITE_HOST = sys.argv[4]
     monitor(sys.argv[1], sys.argv[2], int(sys.argv[3]))
