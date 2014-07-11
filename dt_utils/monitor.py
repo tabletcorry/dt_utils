@@ -11,7 +11,8 @@ import cPickle as pickle
 import struct
 
 hostname = socket.gethostname()
-hostname = hostname[:hostname.find('.')]
+if '.' in hostname:
+    hostname = hostname[:hostname.find('.')]
 
 INTERVAL = 10
 
